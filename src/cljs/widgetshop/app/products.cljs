@@ -26,3 +26,7 @@
 
 (defn load-product-categories! []
   (server/get! "/categories" {:on-success #(state/update-state! set-categories %)}))
+
+(defn add-to-cart! [product]
+  (state/update-state! (fn [app]
+                         (assoc app :cart (conj (:cart app) product)))))
