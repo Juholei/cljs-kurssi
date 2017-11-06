@@ -21,12 +21,19 @@
    (for [juttu jutut]
      [:li [:a {:on-click #(e! (->ValitseJuttu juttu))} juttu]])])
 
+(defn product-view [product]
+  [:span
+   [:h1 (:name product)]
+   [:h2 (str (:price product) "€")]
+   [:p (:description product)]
+   [ui/flat-button {:on-click #(products/unselect-product!)} "Back"]])
+
 (defn product-listing [products]
   ;; Product listing for the selected category
   (if (= :loading products)
     [ui/refresh-indicator {:status "loading" :size 40 :left 10 :top 10}]
 
-    [ui/table
+    [ui/table {:on-row-selection #(products/select-product! (first (js->clj %)))}
      [ui/table-header {:display-select-all false :adjust-for-checkbox false}
       [ui/table-row
        [ui/table-header-column "Name"]
@@ -41,7 +48,9 @@
          [ui/table-row-column description]
          [ui/table-row-column price]
          [ui/table-row-column
-          [ui/flat-button {:primary true :on-click #(products/add-to-cart! product)}
+          [ui/flat-button {:primary true :on-click #(do
+                                                      (.stopPropagation %)
+                                                      (products/add-to-cart! product))}
            "Add to cart"]]])]]))
 
 (defn widgetshop [app]
@@ -57,22 +66,19 @@
                                  (ic/action-shopping-cart)]])}]
     [ui/paper
 
-     ;; Product category selection
-     (when-not (= :loading (:categories app))
-       [ui/select-field {:floating-label-text "Select product category"
-                         :value (:id (:category app))
-                         :on-change (fn [evt idx value]
-                                      (products/select-category-by-id! value))}
-        (for [{:keys [id name] :as category} (:categories app)]
-          ^{:key id}
-          [ui/menu-item {:value id :primary-text name}])])
-
-     [product-listing ((:products-by-category app) (:category app))]
-
-     [ui/raised-button {:label        "Click me"
-                        :icon         (ic/social-group)
-                        :on-click     #(println "clicked")}]]]])
-
+     (if (:selected-item app)
+       [product-view (:selected-item app)]
+       ;; Product category selection
+       [:span
+        (when-not (= :loading (:categories app))
+          [ui/select-field {:floating-label-text "Select product category"
+                            :value (:id (:category app))
+                            :on-change (fn [evt idx value]
+                                         (products/select-category-by-id! value))}
+           (for [{:keys [id name] :as category} (:categories app)]
+             ^{:key id}
+             [ui/menu-item {:value id :primary-text name}])])
+        [product-listing ((:products-by-category app) (:category app))]])]]])
 
 (defn main-component []
   [widgetshop @state/app])

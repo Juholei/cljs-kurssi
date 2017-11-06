@@ -30,3 +30,18 @@
 (defn add-to-cart! [product]
   (state/update-state! (fn [app]
                          (assoc app :cart (conj (:cart app) product)))))
+
+(defn find-product-by-index [app idx]
+  (let [category (:category app)
+        products-of-category ((:products-by-category app) category)
+        product-by-index (nth products-of-category idx)]
+    product-by-index))
+
+(defn set-product [app product-idx]
+  (assoc app :selected-item (find-product-by-index app product-idx)))
+
+(defn select-product! [product-idx]
+  (state/update-state! set-product product-idx))
+
+(defn unselect-product! []
+  (state/update-state! dissoc :selected-item))
