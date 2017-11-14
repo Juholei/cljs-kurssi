@@ -56,6 +56,9 @@
 (defn update-review-star-rating! [number-of-stars]
   (state/update-state! assoc-in [:selected-item :review :stars] number-of-stars))
 
+(defn finish-review-editing! []
+  (state/update-state! update :selected-item dissoc :review))
+
 (defn submit-review! []
   (.log js/console "Saving review")
   (state/update-state!
@@ -65,6 +68,6 @@
        (.log js/console "Review: " (pr-str review))
        (server/post! "/review"
                      {:body review
-                      :on-success #(.log js/console "onnistui " (str %))
+                      :on-success #(finish-review-editing!)
                       :on-failure #(.log js/console "ei onnistunut")})
        (assoc-in app [:selected-item :review :submit-in-progress?] true)))))
