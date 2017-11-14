@@ -45,3 +45,26 @@
 
 (defn unselect-product! []
   (state/update-state! dissoc :selected-item))
+
+(defn add-review! []
+  (state/update-state! assoc-in [:selected-item :review] {:comment ""
+                                                          :stars 0}))
+
+(defn update-review-comment! [comment]
+  (state/update-state! assoc-in [:selected-item :review :comment] comment))
+
+(defn update-review-star-rating! [number-of-stars]
+  (state/update-state! assoc-in [:selected-item :review :stars] number-of-stars))
+
+(defn submit-review! []
+  (.log js/console "Saving review")
+  (state/update-state!
+   (fn [app]
+     (let [review (assoc (get-in app [:selected-item :review])
+                         :product-id (get-in app [:selected-item :id]))]
+       (.log js/console "Review: " (pr-str review))
+       (server/post! "/review"
+                     {:body review
+                      :on-success #(.log js/console "onnistui " (str %))
+                      :on-failure #(.log js/console "ei onnistunut")})
+       (assoc-in app [:selected-item :review :submit-in-progress?] true)))))

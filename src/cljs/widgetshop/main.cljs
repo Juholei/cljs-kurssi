@@ -21,7 +21,23 @@
    [:h1 (:name product)]
    [:h2 (str (:price product) "€")]
    [:p (:description product)]
-   [ui/flat-button {:on-click #(products/unselect-product!)} "Back"]])
+   [ui/flat-button {:on-click #(products/unselect-product!)} "Back"]
+   [ui/flat-button {:on-click #(products/add-review!)} "Rate this product"]
+   (when (get-in product [:review])
+     [:div
+      [ui/text-field {:id "review-comment"
+                      :floating-label-text "Review text"
+                      :value (get-in product [:review :comment])
+                      :on-change (fn [event value]
+                                   (products/update-review-comment! value))}]
+
+      (doall
+       (for [rating (range 1 6)]
+        (if (<= rating (get-in product [:review :stars]))
+          ^{:key rating} [ic/toggle-star {:on-click #(products/update-review-star-rating! rating)}]
+          ^{:key rating} [ic/toggle-star-border {:on-click #(products/update-review-star-rating! rating)}])))
+      [ui/flat-button {:primary true
+                       :on-click products/submit-review!} "Save review"]])])
 
 (defn product-listing [products]
   ;; Product listing for the selected category

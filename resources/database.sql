@@ -18,6 +18,12 @@ CREATE TABLE product_category (
   category_id INTEGER NOT NULL REFERENCES category (id)
 );
 
+CREATE TABLE product_review (
+  product_id INTEGER NOT NULL REFERENCES product (id),
+  stars NUMERIC NOT NULL,
+  comment TEXT
+);
+
 -- insert some test data
 
 INSERT INTO category (name, description)
