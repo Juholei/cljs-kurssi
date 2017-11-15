@@ -57,10 +57,10 @@
   (state/update-state! assoc-in [:selected-item :review :stars] number-of-stars))
 
 (defn finish-review-editing! []
-  (state/update-state! update :selected-item dissoc :review))
+  (state/update-state! update :selected-item dissoc :review)
+  (set-alert! "Review submitted!"))
 
 (defn submit-review! []
-  (.log js/console "Saving review")
   (state/update-state!
    (fn [app]
      (let [review (assoc (get-in app [:selected-item :review])
@@ -71,3 +71,9 @@
                       :on-success #(finish-review-editing!)
                       :on-failure #(.log js/console "ei onnistunut")})
        (assoc-in app [:selected-item :review :submit-in-progress?] true)))))
+
+(defn set-alert! [alert]
+  (state/update-state! assoc :alert alert))
+
+(defn remove-alert! []
+  (state/update-state! dissoc :alert))

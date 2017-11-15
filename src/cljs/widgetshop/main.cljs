@@ -23,14 +23,13 @@
    [:p (:description product)]
    [ui/flat-button {:on-click #(products/unselect-product!)} "Back"]
    [ui/flat-button {:on-click #(products/add-review!)} "Rate this product"]
-   (when (get-in product [:review])
+   (when (:review product)
      [:div
       [ui/text-field {:id "review-comment"
                       :floating-label-text "Review text"
                       :value (get-in product [:review :comment])
                       :on-change (fn [event value]
                                    (products/update-review-comment! value))}]
-
       (doall
        (for [rating (range 1 6)]
         (if (<= rating (get-in product [:review :stars]))
@@ -60,7 +59,7 @@
          [ui/table-row-column description]
          [ui/table-row-column price]
          [ui/table-row-column (when-not (= stars 0)
-                                (str stars "/5"))]
+                                (str (.toFixed stars 2) "/5"))]
          [ui/table-row-column
           [ui/flat-button {:primary true :on-click #(do
                                                       (.stopPropagation %)
@@ -78,6 +77,10 @@
                                           :badge-style {:top 12 :right 12}}
                                 [ui/icon-button {:tooltip "Checkout"}
                                  (ic/action-shopping-cart)]])}]
+    [ui/snackbar {:auto-hide-duration 5000
+                  :on-request-close products/remove-alert!
+                  :open (:alert app)
+                  :message (:alert app)}]
     [ui/paper
 
      (if (:selected-item app)
