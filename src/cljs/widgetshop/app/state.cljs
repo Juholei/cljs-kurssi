@@ -8,7 +8,8 @@
 
                       ;; Loaded product listings keyd by selected category
                       :products-by-category {}
-                      :selected-item nil}))
+                      :selected-item nil
+                      :page :product-listing}))
 
 (defn update-state!
   "Updates the application state using a function, that accepts as parameters
