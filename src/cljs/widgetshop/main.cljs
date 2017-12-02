@@ -21,7 +21,8 @@
    [:h1 (:name product)]
    [:h2 (str (:price product) "€")]
    [:p (:description product)]
-   [ui/flat-button {:on-click #(products/unselect-product!)} "Back"]
+   [ui/flat-button {:on-click #(do (products/unselect-product!)
+                                   (products/set-page! :product-listing))} "Back"]
    [ui/flat-button {:on-click #(products/add-review!)} "Rate this product"]
    (when (:review product)
      [:div
@@ -43,7 +44,8 @@
   (if (= :loading products)
     [ui/refresh-indicator {:status "loading" :size 40 :left 10 :top 10}]
 
-    [ui/table {:on-row-selection #(products/select-product! (first (js->clj %)))}
+    [ui/table {:on-row-selection #(do (products/select-product! (first (js->clj %)))
+                                      (products/set-page! :product-page))}
      [ui/table-header {:display-select-all false :adjust-for-checkbox false}
       [ui/table-row
        [ui/table-header-column "Name"]
@@ -66,6 +68,37 @@
                                                       (products/add-to-cart! product))}
            "Add to cart"]]])]]))
 
+(defn cart-listing [products]
+  [ui/table
+   [ui/table-header {:display-select-all false :adjust-for-checkbox false}
+    [ui/table-row
+     [ui/table-header-column "Name"]
+     [ui/table-header-column "Description"]
+     [ui/table-header-column "Price (€)"]
+     [ui/table-header-column "Quantity"]
+     [ui/table-header-column "Total"]
+     [ui/table-header-column]]]
+   [ui/table-body {:display-row-checkbox false}
+    (for [{:keys [id name description price stars] :as product} (set products)]
+      (let [product-count (count (filter #(= id (:id %)) products))]
+        ^{:key id}
+        [ui/table-row
+         [ui/table-row-column name]
+         [ui/table-row-column description]
+         [ui/table-row-column price]
+         [ui/table-row-column [:input {:type "number"
+                                       :value product-count}]]
+         [ui/table-row-column (str (* price product-count) "€")]
+         [ui/table-row-column "muffinssi"]]))]])
+
+
+(defn shopping-cart [cart]
+  [:div
+   [:h1 "Shopping cart"]
+   [cart-listing cart]
+   [ui/flat-button {:primary true
+                    :on-click #(products/set-page! :product-listing)} "Back to product listing"]])
+
 (defn widgetshop [app]
   [ui/mui-theme-provider
    {:mui-theme (get-mui-theme
@@ -75,27 +108,28 @@
                  :icon-element-right
                  (r/as-element [ui/badge {:badge-content (count (:cart app))
                                           :badge-style {:top 12 :right 12}}
-                                [ui/icon-button {:tooltip "Checkout"}
+                                [ui/icon-button {:tooltip "Checkout"
+                                                 :on-click #(products/set-page! :cart)}
                                  (ic/action-shopping-cart)]])}]
     [ui/snackbar {:auto-hide-duration 5000
                   :on-request-close products/remove-alert!
                   :open (:alert app)
                   :message (:alert app)}]
     [ui/paper
+     (case (:page app)
+       :product-listing [:span
+                         (when-not (= :loading (:categories app))
+                           [ui/select-field {:floating-label-text "Select product category"
+                                             :value (:id (:category app))
+                                             :on-change (fn [evt idx value]
+                                                          (products/select-category-by-id! value))}
+                            (for [{:keys [id name] :as category} (:categories app)]
+                              ^{:key id}
+                              [ui/menu-item {:value id :primary-text name}])])
+                         [product-listing ((:products-by-category app) (:category app))]]
+       :product-page [product-view (:selected-item app)]
+       :cart [shopping-cart (:cart app)])]]])
 
-     (if (:selected-item app)
-       [product-view (:selected-item app)]
-       ;; Product category selection
-       [:span
-        (when-not (= :loading (:categories app))
-          [ui/select-field {:floating-label-text "Select product category"
-                            :value (:id (:category app))
-                            :on-change (fn [evt idx value]
-                                         (products/select-category-by-id! value))}
-           (for [{:keys [id name] :as category} (:categories app)]
-             ^{:key id}
-             [ui/menu-item {:value id :primary-text name}])])
-        [product-listing ((:products-by-category app) (:category app))]])]]])
 
 (defn main-component []
   [widgetshop @state/app])
