@@ -79,17 +79,18 @@
      [ui/table-header-column "Total"]
      [ui/table-header-column]]]
    [ui/table-body {:display-row-checkbox false}
-    (for [{:keys [id name description price stars] :as product} (set products)]
-      (let [product-count (count (filter #(= id (:id %)) products))]
+    (for [{:keys [id name description price stars] :as product} (keys products)]
+      (let [product-count (get products product)]
         ^{:key id}
         [ui/table-row
          [ui/table-row-column name]
          [ui/table-row-column description]
          [ui/table-row-column price]
          [ui/table-row-column [:input {:type "number"
-                                       :value product-count}]]
+                                       :value product-count
+                                       :on-change #(products/update-amount-in-cart! product (-> % .-target .-value))}]]
          [ui/table-row-column (str (* price product-count) "€")]
-         [ui/table-row-column "muffinssi"]]))]])
+         [ui/table-row-column [:button {:on-click #(products/remove-from-cart! product)} "muffinssi"]]]))]])
 
 
 (defn shopping-cart [cart]
@@ -106,14 +107,14 @@
    [:div
     [ui/app-bar {:title "Widgetshop!"
                  :icon-element-right
-                 (r/as-element [ui/badge {:badge-content (count (:cart app))
+                 (r/as-element [ui/badge {:badge-content (reduce + (vals (:cart app)))
                                           :badge-style {:top 12 :right 12}}
                                 [ui/icon-button {:tooltip "Checkout"
                                                  :on-click #(products/set-page! :cart)}
                                  (ic/action-shopping-cart)]])}]
     [ui/snackbar {:auto-hide-duration 5000
                   :on-request-close products/remove-alert!
-                  :open (:alert app)
+                  :open (boolean (:alert app))
                   :message (:alert app)}]
     [ui/paper
      (case (:page app)

@@ -29,7 +29,15 @@
 
 (defn add-to-cart! [product]
   (state/update-state! (fn [app]
-                         (assoc app :cart (conj (:cart app) product)))))
+                         (update-in app [:cart product] inc))))
+
+(defn remove-from-cart! [product]
+  (state/update-state! (fn [app]
+                         (update app :cart dissoc product))))
+
+(defn update-amount-in-cart! [product amount]
+  (state/update-state! (fn [app]
+                         (assoc-in app [:cart product] amount))))
 
 (defn find-product-by-index [app idx]
   (let [category (:category app)
