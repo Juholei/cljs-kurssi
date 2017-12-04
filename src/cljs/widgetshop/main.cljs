@@ -92,13 +92,66 @@
          [ui/table-row-column (str (* price product-count) "€")]
          [ui/table-row-column [:button {:on-click #(products/remove-from-cart! product)} "muffinssi"]]]))]])
 
+(defn checkout-navigation-buttons [checkout-info]
+  [:span
+   [ui/flat-button {:disabled (zero? (:step checkout-info))
+                    :on-click #(products/update-checkout-step! dec)} "Back"]
+   [ui/raised-button {:primary true
+                      :on-click #(products/update-checkout-step! inc)} "Next"]])
+
+(defn general-form [header fields]
+  [:div
+   [:h1 header]
+   (doall
+     (for [field fields]
+       ^{:key (:label field)}
+       [:span
+        [ui/text-field {:id (:label field)
+                        :floating-label-text (:label field)
+                        :value (:value field)
+                        :on-change (:on-change field)}]
+        [:br]]))])
+
+(defn checkout [cart checkout-info]
+  [:div
+   [ui/stepper {:active-step (:step checkout-info)}
+    [ui/step
+     [ui/step-label "Payment method"]]
+    [ui/step
+     [ui/step-label "Delivery info"]]
+    [ui/step
+     [ui/step-label "Confirm your order"]]
+    [ui/step
+     [ui/step-label "Thank you"]]]
+   (case (:step checkout-info)
+     0 [general-form "Payment info " [{:label "Name"
+                                       :value (get-in checkout-info [:billing :name])
+                                       :on-change (fn [event value]
+                                                    (products/update-billing-name! value))}
+                                      {:label "Card Number"
+                                       :value (get-in checkout-info [:billing :card-number])
+                                       :on-change (fn [event value]
+                                                    (products/update-billing-card-number! value))}]]
+     1 [general-form "Delivery info" [{:label "Recipient name"
+                                       :value (get-in checkout-info [:shipping :name])
+                                       :on-change (fn [event value]
+                                                    (products/update-shipping-name! value))}
+                                      {:label "Delivery address"
+                                       :value (get-in checkout-info [:shipping :address])
+                                       :on-change (fn [event value]
+                                                    (products/update-shipping-address! value))}]]
+     2 [:h1 "Confirm your order"]
+     3 [:h1 "Thank you"])
+   [checkout-navigation-buttons checkout-info]])
 
 (defn shopping-cart [cart]
   [:div
    [:h1 "Shopping cart"]
    [cart-listing cart]
    [ui/flat-button {:primary true
-                    :on-click #(products/set-page! :product-listing)} "Back to product listing"]])
+                    :on-click #(products/set-page! :product-listing)} "Back to product listing"]
+   [ui/flat-button {:primary true
+                    :on-click #(products/set-page! :checkout)} "Checkout"]])
 
 (defn widgetshop [app]
   [ui/mui-theme-provider
@@ -129,7 +182,8 @@
                               [ui/menu-item {:value id :primary-text name}])])
                          [product-listing ((:products-by-category app) (:category app))]]
        :product-page [product-view (:selected-item app)]
-       :cart [shopping-cart (:cart app)])]]])
+       :cart [shopping-cart (:cart app)]
+       :checkout [checkout (:cart app) (:checkout app)])]]])
 
 
 (defn main-component []

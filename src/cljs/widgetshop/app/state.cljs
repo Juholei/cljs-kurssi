@@ -9,7 +9,12 @@
                       ;; Loaded product listings keyd by selected category
                       :products-by-category {}
                       :selected-item nil
-                      :page :product-listing}))
+                      :page :product-listing
+                      :checkout {:step 0
+                                 :shipping {:name ""
+                                            :address ""}
+                                 :billing {:name ""
+                                           :card-number ""}}}))
 
 (defn update-state!
   "Updates the application state using a function, that accepts as parameters

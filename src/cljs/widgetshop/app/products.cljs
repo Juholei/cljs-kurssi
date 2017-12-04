@@ -88,3 +88,18 @@
 
 (defn set-page! [page]
   (state/update-state! assoc :page page))
+
+(defn update-checkout-step! [update-fn]
+  (state/update-state! update-in [:checkout :step] update-fn))
+
+(defn update-billing-name! [name]
+  (state/update-state! assoc-in [:checkout :billing :name] name))
+
+(defn update-billing-card-number! [card-number]
+  (state/update-state! assoc-in [:checkout :billing :card-number] card-number))
+
+(defn update-shipping-name! [name]
+  (state/update-state! assoc-in [:checkout :shipping :name] name))
+
+(defn update-shipping-address! [address]
+  (state/update-state! assoc-in [:checkout :shipping :address] address))
