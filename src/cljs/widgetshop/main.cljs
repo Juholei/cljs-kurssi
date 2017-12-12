@@ -68,29 +68,35 @@
                                                       (products/add-to-cart! product))}
            "Add to cart"]]])]]))
 
-(defn cart-listing [products]
-  [ui/table
-   [ui/table-header {:display-select-all false :adjust-for-checkbox false}
-    [ui/table-row
-     [ui/table-header-column "Name"]
-     [ui/table-header-column "Description"]
-     [ui/table-header-column "Price (€)"]
-     [ui/table-header-column "Quantity"]
-     [ui/table-header-column "Total"]
-     [ui/table-header-column]]]
-   [ui/table-body {:display-row-checkbox false}
-    (for [{:keys [id name description price stars] :as product} (keys products)]
-      (let [product-count (get products product)]
-        ^{:key id}
-        [ui/table-row
-         [ui/table-row-column name]
-         [ui/table-row-column description]
-         [ui/table-row-column price]
-         [ui/table-row-column [:input {:type "number"
-                                       :value product-count
-                                       :on-change #(products/update-amount-in-cart! product (-> % .-target .-value))}]]
-         [ui/table-row-column (str (* price product-count) "€")]
-         [ui/table-row-column [:button {:on-click #(products/remove-from-cart! product)} "muffinssi"]]]))]])
+(defn cart-listing
+  ([products]
+   (cart-listing products true))
+  ([products editable?]
+   [ui/table
+    [ui/table-header {:display-select-all false :adjust-for-checkbox false}
+     [ui/table-row
+      [ui/table-header-column "Name"]
+      [ui/table-header-column "Description"]
+      [ui/table-header-column "Price (€)"]
+      [ui/table-header-column "Quantity"]
+      [ui/table-header-column "Total"]
+      (when editable?
+        [ui/table-header-column])]]
+    [ui/table-body {:display-row-checkbox false}
+     (for [{:keys [id name description price stars] :as product} (keys products)]
+       (let [product-count (get products product)]
+         ^{:key id}
+         [ui/table-row
+          [ui/table-row-column name]
+          [ui/table-row-column description]
+          [ui/table-row-column price]
+          [ui/table-row-column [:input {:type "number"
+                                        :value product-count
+                                        :on-change #(products/update-amount-in-cart! product (-> % .-target .-value))
+                                        :disabled (not editable?)}]]
+          [ui/table-row-column (str (* price product-count) "€")]
+          (when editable?
+           [ui/table-row-column [:button {:on-click #(products/remove-from-cart! product)} "muffinssi"]])]))]]))
 
 (defn checkout-navigation-buttons [checkout-info]
   [:span
@@ -111,6 +117,18 @@
                         :value (:value field)
                         :on-change (:on-change field)}]
         [:br]]))])
+
+(defn confirmation-page [cart checkout-info]
+  [:div
+   [:h1 "Confirm your order"]
+   [:h2 "Payment details"]
+   [:p "Name: " (get-in checkout-info [:billing :name])]
+   [:p "Card number: " (get-in checkout-info [:billing :card-number])]
+   [:h2 "Shipping details"]
+   [:p "Recipient: " (get-in checkout-info [:shipping :name])]
+   [:p "Shipping address: " (get-in checkout-info [:shipping :address])]
+   [:h2 "Items in order "]
+   [cart-listing cart false]])
 
 (defn checkout [cart checkout-info]
   [:div
@@ -140,9 +158,10 @@
                                        :value (get-in checkout-info [:shipping :address])
                                        :on-change (fn [event value]
                                                     (products/update-shipping-address! value))}]]
-     2 [:h1 "Confirm your order"]
-     3 [:h1 "Thank you"])
-   [checkout-navigation-buttons checkout-info]])
+     2 [confirmation-page cart checkout-info]
+     3 [:h1 "Thank you for your order!"])
+   (when (< (:step checkout-info) 3)
+     [checkout-navigation-buttons checkout-info])])
 
 (defn shopping-cart [cart]
   [:div
