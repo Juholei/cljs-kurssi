@@ -6,7 +6,8 @@
             [cljs-react-material-ui.reagent :as ui]
             [cljs-react-material-ui.icons :as ic]
             [widgetshop.app.state :as state]
-            [widgetshop.app.products :as products]))
+            [widgetshop.app.products :as products]
+            [widgetshop.routes :as routes]))
 
 
 
@@ -190,17 +191,18 @@
                   :message (:alert app)}]
     [ui/paper
      (case (:page app)
-       :product-listing [:span
-                         (when-not (= :loading (:categories app))
-                           [ui/select-field {:floating-label-text "Select product category"
-                                             :value (:id (:category app))
-                                             :on-change (fn [evt idx value]
-                                                          (products/select-category-by-id! value))}
-                            (for [{:keys [id name] :as category} (:categories app)]
-                              ^{:key id}
-                              [ui/menu-item {:value id :primary-text name}])])
-                         [product-listing ((:products-by-category app) (:category app))]]
-       :product-page [product-view (:selected-item app)]
+       (:front-page :product-listing)
+       [:span
+        (when-not (= :loading (:categories app))
+          [ui/select-field {:floating-label-text "Select product category"
+                            :value (:id (:category app))
+                            :on-change (fn [evt idx value]
+                                         (products/select-category-by-id! value))}
+           (for [{:keys [id name] :as category} (:categories app)]
+             ^{:key id}
+             [ui/menu-item {:value id :primary-text name}])])
+        [product-listing ((:products-by-category app) (:category app))]]
+       :product-page [product-view (some #(when (= (:id %) (:selected-item-id app) %)) (get (:products-by-category app) (:category app)))]
        :cart [shopping-cart (:cart app)]
        :checkout [checkout (:cart app) (:checkout app)])]]])
 
@@ -209,7 +211,7 @@
   [widgetshop @state/app])
 
 (defn ^:export main []
-  (products/load-product-categories!)
+  (products/load-product-categories! routes/start!)
   (r/render-component [main-component] (.getElementById js/document "app")))
 
 (defn ^:export reload-hook []
